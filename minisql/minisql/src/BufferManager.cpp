@@ -6,7 +6,7 @@
 #include "BufferManager.h"
 #include <fstream>
 
-int BufferManager::pointer_to_free_block = 0;
+int BufferManager::pointer_to_free_block = BLOCK_NUM - 1;
 int BufferManager::pinned_count = 0;
 Block BufferManager::buffer[BLOCK_NUM];
 
@@ -30,12 +30,10 @@ Block& BufferManager::readBlockFromFile(std::string file_name, int ofs)
 	return buffer[idx];
 }
 
-
-
 int BufferManager::getIndexInBuffer(std::string file_name, int ofs)
 {
 	for (int i = 0; i < BLOCK_NUM; i++) {
-		if (buffer[i].getFileName() == file_name && buffer[i].getOfs() == ofs) {
+		if (buffer[i].isValid() && buffer[i].getFileName() == file_name && buffer[i].getOfs() == ofs) {
 			return i;
 		}
 	}
@@ -45,24 +43,45 @@ int BufferManager::getIndexInBuffer(std::string file_name, int ofs)
 int BufferManager::getFreeIndex()
 {
 	int& p = pointer_to_free_block;
+	p = (p + 1) % BLOCK_NUM;
 	int initial_pointer = p;
-	bool protect_pinned = true;
+	int round = 0;
 
 	while (true) {
-		if (!buffer[p].isValid() || (!buffer[p].getLRUFlag() && !(protect_pinned && buffer[p].isPinned())))
+		if (!buffer[p].isValid() || (!buffer[p].getLRUFlag() && !buffer[p].isPinned())) {
 			return p;
+		}
+
 		if (!buffer[p].isPinned()) buffer[p].setLRUFlag(0);
+
 		p = (p + 1) % BLOCK_NUM;
-		if (p == initial_pointer) // 所有块都被钉住
-		{
-			if (!protect_pinned) throw BufferException("Unable to get a free index in buffer.");
-			protect_pinned = false;
+		if (p == initial_pointer) {
+			if (round == 0) {
+				round++;
+			}
+			else if (round == 1) {
+				for (int i = 0; i < BLOCK_NUM; i++) {
+					buffer[i].unpin();
+				}
+			}
+			else {
+				throw BufferException("Failed to get a free index.");
+			}
 		}
 	};
 }
 
-// 测试
+void BufferManager::invalidateFileName(std::string file_name)
+{
+	for (int i = 0; i < BLOCK_NUM; i++) {
+		if (buffer[i].getFileName() == file_name) {
+			buffer[i].invalidate();
+		}
+	}
+}
 
+
+// 测试
 #include <iostream>
 
 int main()
@@ -70,14 +89,20 @@ int main()
 	BufferManager m;
 	std::string filename = "C:\\Users\\imbiansl\\Desktop\\test.dat";
 	try {
-		Block b = m.readBlockFromFile(filename, 2);
-		std::cout << b.getFileName() << std::endl << b.getOfs() << std::endl;
-		b.writeInt(0, 120);
-		b.writeInt(4, 480);
-		b.writeFloat(8, 9.6);
-		b.writeString(12, "Yes!");
-		b.writeString(112, "Hello from here.");
-		std::cout << b.readInt(4) << ' ' << b.readFloat(8) << ' ' << b.readString(112, 16);
+		int n = 128;
+		for (int i = 0; i < n; i++) {
+			Block& b = m.readBlockFromFile(filename, i);
+			b.writeInt(20, i * 10);
+			b.writeFloat(40, static_cast<float>(i) / 10.0);
+			b.writeString(60, std::string("This is string no. ") + std::to_string(i));
+			std::cout << b.readInt(20) << ' ' << b.readFloat(40) << ' ' << b.readString(60, 25) << std::endl;
+		}
+
+		for (int i = 0; i < n; i++) {
+			Block& b = m.readBlockFromFile(filename, i);
+			std::cout << b.readInt(20) << ' ' << b.readFloat(40) << ' ' << b.readString(60, 25) << std::endl;
+		}
+
 	}
 	catch (BufferException e) {
 		std::cout << e.what();

@@ -143,7 +143,10 @@ void Block::readFromFile(std::string file_name, int ofs)
 
 	try {
 		file.seekg(ofs * BLOCK_SIZE, std::ios::beg);
+
+		if (is_valid && is_dirty) writeBackToFile();
 		file.read(block_data, BLOCK_SIZE);
+
 		file.close();
 	}
 	catch (const std::ios_base::failure& e) {

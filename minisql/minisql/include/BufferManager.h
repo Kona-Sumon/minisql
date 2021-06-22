@@ -44,7 +44,6 @@ private:
 
 public:
     Block();
-    Block(std::string _file_name, int _ofs);
     Block(Block& b);
     Block& operator=(const Block& b);
 
@@ -99,6 +98,7 @@ public:
     void setFileName(std::string _file_name);
     void setOfs(int _ofs);
     void resetModes();
+
 };
 
 class BufferManager {
@@ -115,15 +115,15 @@ private:
     int getFreeIndex();
 
     
-
 public:
     BufferManager();
     ~BufferManager();
 
     // 将 file_name 文件的第 ofs 块读入 buffer，并返回 buffer 中块的引用
+    // 必须使用引用来接收返回值，如 Block& b = readBlockFromFile("filename", 0);
     Block& readBlockFromFile(std::string file_name, int ofs);
 
     // 将 buffer 中文件名为 file_name 的块设置为无效
-    void invalidateFileName();
+    void invalidateFileName(std::string file_name);
 
 };
