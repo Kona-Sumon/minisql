@@ -69,13 +69,18 @@ int main()
 {
 	BufferManager m;
 	std::string filename = "C:\\Users\\imbiansl\\Desktop\\test.dat";
-	Block b = m.readBlockFromFile(filename, 2);
-	std::cout << b.getFileName() << std::endl << b.getOfs() << std::endl;
-	//b.writeInt(0, 120);
-	//b.writeInt(4, 480);
-	//b.writeFloat(8, 9.6);
-	//b.writeString(12, "Yes!");
-	//b.writeString(112, "Hello from here.");
-	std::cout << b.readInt(4) << ' ' << b.readFloat(8) << ' ' << b.readString(112, 16);
+	try {
+		Block b = m.readBlockFromFile(filename, 2);
+		std::cout << b.getFileName() << std::endl << b.getOfs() << std::endl;
+		b.writeInt(0, 120);
+		b.writeInt(4, 480);
+		b.writeFloat(8, 9.6);
+		b.writeString(12, "Yes!");
+		b.writeString(112, "Hello from here.");
+		std::cout << b.readInt(4) << ' ' << b.readFloat(8) << ' ' << b.readString(112, 16);
+	}
+	catch (BufferException e) {
+		std::cout << e.what();
+	}
 	return 0;
 }
