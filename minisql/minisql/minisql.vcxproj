@@ -143,10 +143,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\API.h" />
     <ClInclude Include="include\BufferManager.h" />
     <ClInclude Include="include\Interpreter.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\API.cpp" />
     <ClCompile Include="src\Block.cpp" />
     <ClCompile Include="src\BufferException.cpp" />
     <ClCompile Include="src\BufferManager.cpp" />

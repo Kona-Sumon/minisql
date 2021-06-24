@@ -1,12 +1,16 @@
-#include <iostream>
-#include <string>
-#include <map>
-#include <vector>
-#include <sstream>
+/*
+Interpreter.cpp
+Interpreter模块直接与用户交互，主要实现以下功能：
+1.	程序流程控制，即“启动并初始化 ->‘接收命令、处理命令、显示命令结果’循环 -> 退出”流程
+2.	接收并解释用户输入的命令，生成命令的内部数据结构表示，同时检查命令的语法正确性和语义正确性，
+对正确的命令调用API层提供的函数执行并显示执行结果，对不正确的命令显示错误信息。
+开发者：史明昊
+日期：2021/6/19
+*/
+
+#include "API.h"
+
 using namespace std;
-
-#include "Interpreter.h"
-
 
 /*
 getOneWord函数用来获取一个单词
@@ -60,6 +64,8 @@ string Interpreter::getOneWord()
 		return result;
 	}
 }
+
+class SyntaxException {};//异常类
 
 /*
 change函数用来改变语句为内部逻辑
@@ -187,7 +193,7 @@ int Interpreter::change()
 								{
 									word = getOneWord();
 									int i;
-									for (i = 0; i < attributeList.size(); i++)
+									for (i = 0; i < int(attributeList.size()); i++)
 									{
 										if (word == attributeList[i].name)//若该属性为主键,则设置为unique
 										{
@@ -231,7 +237,7 @@ int Interpreter::change()
 							cout << "Syntax Error for no primary key" << endl;
 							return 0;
 						}
-						//ap->tableCreate(tableName, &attributeList, primaryKey, primaryKeyLocation);//获取相应信息后调用API函数创建表
+						api->createTable(tableName, &attributeList, primaryKey, primaryKeyLocation);//创建表
 						return 1;
 					}
 					break;
@@ -268,7 +274,7 @@ int Interpreter::change()
 						word = getOneWord();
 						if (word.empty() || word != ")")
 							throw SyntaxException();
-						//ap->indexCreate(indexName, tableName, attributeName);//调用API函数创建索引
+						api->createIndex(indexName, tableName, attributeName);//创建索引
 						return 1;
 					}
 					catch (SyntaxException&)
@@ -296,7 +302,7 @@ int Interpreter::change()
 				word = getOneWord();
 				if (!word.empty())
 				{
-					//ap->tableDrop(word);//调用API函数删除表
+					api->dropTable(word);//删除表
 					return 1;
 				}
 				else
@@ -311,7 +317,7 @@ int Interpreter::change()
 				word = getOneWord();
 				if (!word.empty())
 				{
-					//ap->indexDrop(word);//调用API函数删除索引
+					api->dropIndex(word);//删除索引
 					return 1;
 				}
 				else
@@ -367,10 +373,10 @@ int Interpreter::change()
 			if (word.empty())//后不跟where条件
 			{
 				if (seletedAttributes.size() == 0) {//select*语句显示表所有信息
-					//ap->recordShow(tableName);//调用API函数显示
+					api->selectALL(tableName);//选择语句
 				}
 				else 
-					//ap->recordShow(tableName, &seletedAttributes);//显示表中关于属性向量里属性的信息
+					api->selectALL(tableName, &seletedAttributes);
 				return 1;
 			}
 			else if (word == "where")//后跟where条件
@@ -423,10 +429,10 @@ int Interpreter::change()
 				}
 				if (seletedAttributes.size() == 0)//select*条件查询
 				{
-					//ap->recordShow(tableName, NULL, &WhereVector);
+					api->selectSome(tableName, NULL, &WhereVector);
 				}
 				else
-					//ap->recordShow(tableName, &seletedAttributes, &WhereVector);//特定属性select条件查询
+					api->selectSome(tableName, &seletedAttributes, &WhereVector);//特定属性select条件查询
 				return 1;
 			}
 			break;
@@ -467,7 +473,7 @@ int Interpreter::change()
 				cout << "Syntax Error" << endl;
 				return 0;
 			}
-			//ap->recordInsert(tableName, &values);//调用API函数插入一条记录
+			api->insertOne(tableName, &values);//插入一条记录
 			return 1;
 			break;
 		}//insert语句部分
@@ -493,7 +499,7 @@ int Interpreter::change()
 			word = getOneWord();
 			if (word.empty())//删除表的所有记录
 			{
-				//ap->recordDelete(tableName);//调用API函数
+				api->deleteALL(tableName);
 				return 1;
 			}
 			else if (word== "where")//条件选择
@@ -542,7 +548,7 @@ int Interpreter::change()
 						return 0;
 					}
 				}
-				//ap->recordDelete(tableName, &WhereVector);//调用API函数删除符合条件的记录
+				api->deleteSome(tableName, &WhereVector);
 				return 1;
 				break;
 			}
@@ -573,8 +579,10 @@ int Interpreter::change()
 			cout << "Error, command " << word << " not found" << endl;
 		return 0;
 	}
+	return 0;
 }
 
+//where语句的条件比较函数 
 template<class T>
 bool Where::judge(T data)
 {
@@ -616,11 +624,6 @@ int main()
 	string str, word;
 	getline(cin, str);
 	Interpreter i(str);
-	word = i.getOneWord();
-	cout << word << endl;
-	while (!word.empty())
-	{
-		word = i.getOneWord();
-		cout << word << endl;
-	}
+	int type = i.change();
+	cout << type << endl;
 }

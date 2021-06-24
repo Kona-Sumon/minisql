@@ -10,16 +10,23 @@ Interpreter模块直接与用户交互，主要实现以下功能：
 #ifndef _INTREPRETER_H_
 #define _INTERPRETER_H_
 
+#include <iostream>
 #include <string>
-int static const TYPE_FLOAT = -1;
-int static const TYPE_INT = 0;
+#include <cstring>
+#include <map>
+#include <vector>
+#include <sstream>
 using namespace std;
+
+class API;
+
 class Interpreter
 {
 private:
 	string s;
 	int temp = 0;
 public:
+	API *api;
 	string file;
 	Interpreter() { }
 	Interpreter(string str):s(str) { }
@@ -51,8 +58,6 @@ public:
 		cout << "name:" << name << ";type:" << ";ifUnique: " << ifUnique << ";index:" << index << endl;
 	}
 };
-
-class SyntaxException {};//异常类
 
 //where语句的条件比较函数 
 class Where
