@@ -95,8 +95,7 @@ private:
     int getBlockCount(string tname);
 };
 
-/* the implement of BPlusTree function */
-//******** The definition of the functions of the class TreeNode **********
+/*BPlusTree function */
 
 //构造函数
 template <class T>
@@ -404,7 +403,7 @@ bool TreeNode<T>::findRange(unsigned int index, vector<int>& valsout)
 	return false;
 }
 
-//******** The definition of the functions of the class BPlusTree **********
+//functions of BPlusTree
 
 //构造函数
 //用于构造一颗新的树，确定m_name,key的size，树的度
