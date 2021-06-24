@@ -76,8 +76,8 @@ void IndexManager::SearchRange(string filePath, keyTmp kt1, keyTmp kt2, vector<i
     }
     
     else if (kt1.type != kt2.type) {
-         cout << "格式错误!" << endl;
-        return;
+        cout << "格式错误!" << endl;
+        //return;
     }
     
     if (kt1.type == TYPE_INT) {
@@ -113,7 +113,7 @@ void IndexManager::dropIndex(string filePath,int type)
         if(itInt == indexIntMap.end())
         {
             cout << "索引不存在" << endl;
-            return;
+            //return;
         }
         else
         {
@@ -127,7 +127,7 @@ void IndexManager::dropIndex(string filePath,int type)
         if(itFloat == indexFloatMap.end())
         {
             cout <<  "索引不存在" << endl;
-            return;
+            //return;
         }
         else
         {
@@ -141,7 +141,7 @@ void IndexManager::dropIndex(string filePath,int type)
         if(itString == indexStringMap.end())
         {
             cout << "索引不存在" << endl;
-            return;
+            //return;
         }
         else
         {
@@ -253,7 +253,7 @@ void IndexManager::deleteIndexByKey(string filePath,string key,int type)
         if(itInt == indexIntMap.end())
         {
             cout << "索引不存在" << endl;
-            return;
+            //return;
         }
         else
         {
@@ -266,7 +266,7 @@ void IndexManager::deleteIndexByKey(string filePath,string key,int type)
         if(itFloat == indexFloatMap.end())
         {
             cout << "索引不存在" << endl;
-            return;
+            //return;
         }
         else
         {
@@ -280,7 +280,7 @@ void IndexManager::deleteIndexByKey(string filePath,string key,int type)
         if(itString == indexStringMap.end())
         {
             cout << "索引不存在" << endl;
-            return;
+            //return;
         }
         else
         {
