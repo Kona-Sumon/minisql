@@ -6,7 +6,7 @@
 #pragma once
 #include <string>
 #include <vector>
-
+#include"IndexManager.h"
 const int CHARSIZE = 1;  //1 byte for a char
 const int INTSIZE = 4;   //4 bytes for an integer
 const int FLOATSIZE = 4; //4 bytes for a float number
@@ -72,7 +72,7 @@ public:
     std::string tableName;
     std::string primaryKey;
     std::vector<Attribute> attributeVector;
-    std::vector<Index> indexVector;
+    std::vector<IndexInfo> indexVector;
     int indexNum;
     int attributeNum;
     //public TableRow tableRow;
@@ -81,14 +81,14 @@ public:
 
     Table(std::string tableName, std::string primaryKey, std::vector<Attribute> attributeVector);
 
-    Table(std::string tableName, std::string primaryKey, std::vector<Attribute> attributeVector, std::vector<Index> indexVector, int rowNum);
+    Table(std::string tableName, std::string primaryKey, std::vector<Attribute> attributeVector, std::vector<IndexInfo> indexVector, int rowNum);
 };
 
 class CatalogManager {
 
 private:
     static LinkedHashMap<std::string, Table> tables = new LinkedHashMap<>();
-    static LinkedHashMap<std::string, Index> indexes = new LinkedHashMap<>();
+    static LinkedHashMap<std::string, IndexInfo> indexes = new LinkedHashMap<>();
     static std::string tableFilename = "table_catalog";
     static std::string indexFilename = "index_catalog";
     static void initial_table();
@@ -113,7 +113,7 @@ public:
 
     static Table get_table(std::string tableName);
 
-    static Index get_index(std::string indexName);
+    static IndexInfo get_index(std::string indexName);
 
     static std::string get_primary_key(std::string tableName);
 
@@ -150,16 +150,16 @@ public:
 
     static void delete_row_num(std::string tableName, int num);
 
-    static bool update_index_table(std::string indexName, Index tmpIndex);
+    static bool update_index_table(std::string indexName, IndexInfo tmpIndex);
 
-    static bool is_attribute_exist(Vector<Attribute> attributeVector, std::string attributeName);
+    static bool is_attribute_exist(std::vector<Attribute> attributeVector, std::string attributeName);
 
     //Interface
     static bool create_table(Table newTable);
 
     static bool drop_table(std::string tableName);
 
-    static bool create_index(Index newIndex);
+    static bool create_index(IndexInfo newIndex);
 
     static bool drop_index(std::string indexName);
 };

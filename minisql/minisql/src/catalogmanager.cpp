@@ -1,11 +1,7 @@
 #include"CatalogManager.h"
-
-import INDEXMANAGER.Index;
-
-import java.io.*;
-import java.util.*;
-
-
+#include"IndexManager.h"
+#include<vector>
+#include<string>
 
 void CatalogManager::initial_catalog() {
         initial_table();
@@ -17,28 +13,28 @@ void CatalogManager::initial_table() {
         if (!file.exists()) return;
         FileInputStream fis = new FileInputStream(file);
         DataInputStream dis = new DataInputStream(fis);
-        String tmpTableName, tmpPrimaryKey;
+        std::string tmpTableName, tmpPrimaryKey;
         int tmpIndexNum, tmpAttributeNum, tmpRowNum;
 
         while (dis.available() > 0) {
-            Vector<Attribute> tmpAttributeVector = new Vector<Attribute>();
-            Vector<Index> tmpIndexVector = new Vector<Index>();
+            std::vector<Attribute>tmpAttributeVector;
+            std::vector<IndexInfo>tmpIndexVector;
             tmpTableName = dis.readUTF();
             tmpPrimaryKey = dis.readUTF();
             tmpRowNum = dis.readInt();
             tmpIndexNum = dis.readInt();
             for (int i = 0; i < tmpIndexNum; i++) {
-                String tmpIndexName, tmpAttributeName;
+                std::string tmpIndexName, tmpAttributeName;
                 tmpIndexName = dis.readUTF();
                 tmpAttributeName = dis.readUTF();
-                tmpIndexVector.addElement(new Index(tmpIndexName, tmpTableName, tmpAttributeName));
+                tmpIndexVector.addElement(new IndexInfo(tmpIndexName, tmpTableName, tmpAttributeName));
             }
             tmpAttributeNum = dis.readInt();
             for (int i = 0; i < tmpAttributeNum; i++) {
-                String tmpAttributeName, tmpType;
+                std::string tmpAttributeName, tmpType;
                 NumType tmpNumType;
                 int tmpLength;
-                boolean tmpIsUnique;
+                bool tmpIsUnique;
                 tmpAttributeName = dis.readUTF();
                 tmpType = dis.readUTF();
                 tmpLength = dis.readInt();
@@ -56,7 +52,7 @@ void CatalogManager::initial_index() {
         if (!file.exists()) return;
         FileInputStream fis = new FileInputStream(file);
         DataInputStream dis = new DataInputStream(fis);
-        String tmpIndexName, tmpTableName, tmpAttributeName;
+        std::string tmpIndexName, tmpTableName, tmpAttributeName;
         int tmpBlockNum, tmpRootNum;
         while (dis.available() > 0) {
             tmpIndexName = dis.readUTF();
@@ -64,7 +60,7 @@ void CatalogManager::initial_index() {
             tmpAttributeName = dis.readUTF();
             tmpBlockNum = dis.readInt();
             tmpRootNum = dis.readInt();
-            indexes.put(tmpIndexName, new Index(tmpIndexName, tmpTableName, tmpAttributeName, tmpBlockNum, tmpRootNum));
+            indexes.put(tmpIndexName, new IndexInfo(tmpIndexName, tmpTableName, tmpAttributeName, tmpBlockNum, tmpRootNum));
         }
         dis.close();
     }
@@ -79,7 +75,7 @@ void CatalogManager::store_table() {
         FileOutputStream fos = new FileOutputStream(file);
         DataOutputStream dos = new DataOutputStream(fos);
         Table tmpTable;
-        Iterator<Map.Entry<String, Table>> iter = tables.entrySet().iterator();
+        Iterator<Map.Entry<std::string, Table>> iter = tables.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = iter.next();
             tmpTable = (Table) entry.getValue();
@@ -88,13 +84,13 @@ void CatalogManager::store_table() {
             dos.writeInt(tmpTable.rowNum);
             dos.writeInt(tmpTable.indexNum);
             for (int i = 0; i < tmpTable.indexNum; i++) {
-                Index tmpIndex = tmpTable.indexVector.get(i);
+                IndexInfo tmpIndex = tmpTable.indexVector[i];
                 dos.writeUTF(tmpIndex.indexName);
                 dos.writeUTF(tmpIndex.attributeName);
             }
             dos.writeInt(tmpTable.attributeNum);
             for (int i = 0; i < tmpTable.attributeNum; i++) {
-                Attribute tmpAttribute = tmpTable.attributeVector.get(i);
+                Attribute tmpAttribute = tmpTable.attributeVector[i];
                 dos.writeUTF(tmpAttribute.attributeName);
                 dos.writeUTF(tmpAttribute.type.get_type().name());
                 dos.writeInt(tmpAttribute.type.get_length());
@@ -111,10 +107,10 @@ void CatalogManager::store_index() {
         DataOutputStream dos = new DataOutputStream(fos);
         Index tmpIndex;
         //Enumeration<Index> en = indexes.elements();
-        Iterator<Map.Entry<String, Index>> iter = indexes.entrySet().iterator();
+        Iterator<Map.Entry<std::string, IndexInfo>> iter = indexes.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = iter.next();
-            tmpIndex = (Index) entry.getValue();
+            tmpIndex = (IndexInfo) entry.getValue();
             //tmpIndex = en.nextElement();
             dos.writeUTF(tmpIndex.indexName);
             dos.writeUTF(tmpIndex.tableName);
@@ -132,23 +128,23 @@ void CatalogManager::show_catalog() {
     }
 
 void CatalogManager::show_index() {
-        Index tmpIndex;
-        Iterator<Map.Entry<String, Index>> iter = indexes.entrySet().iterator();
+        IndexInfo tmpIndex;
+        Iterator<Map.Entry<std::string, IndexInfo>> iter = indexes.entrySet().iterator();
         int idx = 5, tab = 5, attr = 9;
         //System.out.println("There are " + indexes.size() + " indexes in the database: ");
         while (iter.hasNext()) {
             Map.Entry entry = iter.next();
-            tmpIndex = (Index) entry.getValue();
+            tmpIndex = (IndexInfo) entry.getValue();
             idx = tmpIndex.indexName.length() > idx ? tmpIndex.indexName.length() : idx;
             tab = tmpIndex.tableName.length() > tab ? tmpIndex.tableName.length() : tab;
             attr = tmpIndex.attributeName.length() > attr ? tmpIndex.attributeName.length() : attr;
         }
-        String format = "|%-" + idx + "s|%-" + tab + "s|%-" + attr + "s|\n";
+        std::string format = "|%-" + idx + "s|%-" + tab + "s|%-" + attr + "s|\n";
         iter = indexes.entrySet().iterator();
         System.out.printf(format, "INDEX", "TABLE", "ATTRIBUTE");
         while (iter.hasNext()) {
             Map.Entry entry = iter.next();
-            tmpIndex = (Index) entry.getValue();
+            tmpIndex = (IndexInfo) entry.getValue();
             System.out.printf(format, tmpIndex.indexName, tmpIndex.tableName, tmpIndex.attributeName);
         }
 
@@ -157,7 +153,7 @@ void CatalogManager::show_index() {
 int CatalogManager::get_max_attr_length(Table tab) {
         int len = 9;//the size of "ATTRIBUTE"
         for (int i = 0; i < tab.attributeVector.size(); i++) {
-            int v = tab.attributeVector.get(i).attributeName.length();
+            int v = tab.attributeVector[i].attributeName.length();
             len = v > len ? v : len;
         }
         return len;
@@ -166,83 +162,83 @@ int CatalogManager::get_max_attr_length(Table tab) {
 void CatalogManager::show_table() {
         Table tmpTable;
         Attribute tmpAttribute;
-        Iterator<Map.Entry<String, Table>> iter = tables.entrySet().iterator();
+        Iterator<Map.Entry<std::string, Table>> iter = tables.entrySet().iterator();
         //System.out.println("There are " + tables.size() + " tables in the database: ");
         while (iter.hasNext()) {
             Map.Entry entry = iter.next();
             tmpTable = (Table) entry.getValue();
             System.out.println("[TABLE] " + tmpTable.tableName);
-            String format = "|%-" + get_max_attr_length(tmpTable) + "s";
+            std::string format = "|%-" + get_max_attr_length(tmpTable) + "s";
             format += "|%-5s|%-6s|%-6s|\n";
             System.out.printf(format, "ATTRIBUTE", "TYPE", "LENGTH", "UNIQUE");
             for (int i = 0; i < tmpTable.attributeNum; i++) {
-                tmpAttribute = tmpTable.attributeVector.get(i);
+                tmpAttribute = tmpTable.attributeVector[i];
                 System.out.printf(format, tmpAttribute.attributeName, tmpAttribute.type.get_type(), tmpAttribute.type.get_length(), tmpAttribute.isUnique);
             }
-            if (iter.hasNext()) System.out.println("--------------------------------");
+            if (iter.hasNext()) cout << "-------------------------------" << endl;
         }
     }
 
-    public static Table get_table(String tableName) {
+Table get_table(std::string tableName) {
         return tables.get(tableName);
     }
 
-    public static Index get_index(String indexName) {
+Index get_index(std::string indexName) {
         return indexes.get(indexName);
     }
 
-    public static String get_primary_key(String tableName) {
+std::string get_primary_key(std::string tableName) {
         return get_table(tableName).primaryKey;
     }
 
-    public static int get_row_length(String tableName) {
+int get_row_length(std::string tableName) {
         return get_table(tableName).rowLength;
     }
 
-    public static int get_attribute_num(String tableName) {
+int get_attribute_num(std::string tableName) {
         return get_table(tableName).attributeNum;
     }
 
-    public static int get_row_num(String tableName) {
+int get_row_num(std::string tableName) {
         return get_table(tableName).rowNum;
     }
 
     //check
-    public static boolean is_primary_key(String tableName, String attributeName) {
+bool is_primary_key(std::string tableName, std::string attributeName) {
         if (tables.containsKey(tableName)) {
             Table tmpTable = get_table(tableName);
             return tmpTable.primaryKey.equals(attributeName);
         } else {
-            System.out.println("The table " + tableName + " doesn't exist");
+            cout << "The table doesn't exist" << endl;
             return false;
         }
     }
 
-    public static boolean is_unique(String tableName, String attributeName) {
+bool is_unique(std::string tableName, std::string attributeName) {
         if (tables.containsKey(tableName)) {
             Table tmpTable = get_table(tableName);
             for (int i = 0; i < tmpTable.attributeVector.size(); i++) {
-                Attribute tmpAttribute = tmpTable.attributeVector.get(i);
+                Attribute tmpAttribute = tmpTable.attributeVector[i];
                 if (tmpAttribute.attributeName.equals(attributeName)) {
                     return tmpAttribute.isUnique;
                 }
             }
             //if (i >= tmpTable.attributeVector.size()) {
-            System.out.println("The attribute " + attributeName + " doesn't exist");
+            cout << "The attribute doesn't exist" << endl;
             return false;
             //}
         }
-        System.out.println("The table " + tableName + " doesn't exist");
+        cout << "The table doesn't exist" << endl;
         return false;
 
     }
 
-    public static boolean is_index_key(String tableName, String attributeName) {
+bool is_index_key(std::string tableName, std::string attributeName) {
         if (tables.containsKey(tableName)) {
             Table tmpTable = get_table(tableName);
             if (is_attribute_exist(tableName, attributeName)) {
                 for (int i = 0; i < tmpTable.indexVector.size(); i++) {
-                    if (tmpTable.indexVector.get(i).attributeName.equals(attributeName))
+                    if (tmpTable.indexVector[i].attributeName.equals(attributeName))
                         return true;
                 }
             } else {
@@ -253,26 +249,26 @@ void CatalogManager::show_table() {
         return false;
     }
 
-    private static boolean is_index_exist(String indexName) {
+bool is_index_exist(std::string indexName) {
         return indexes.containsKey(indexName);
     }
 
-    private static boolean is_attribute_exist(String tableName, String attributeName) {
+bool is_attribute_exist(std::string tableName, std::string attributeName) {
         Table tmpTable = get_table(tableName);
         for (int i = 0; i < tmpTable.attributeVector.size(); i++) {
-            if (tmpTable.attributeVector.get(i).attributeName.equals(attributeName))
+            if (tmpTable.attributeVector[i].attributeName.equals(attributeName))
                 return true;
         }
         return false;
     }
 
-    public static String get_index_name(String tableName, String attributeName) {
+std::string get_index_name(std::string tableName, std::string attributeName) {
         if (tables.containsKey(tableName)) {
             Table tmpTable = get_table(tableName);
             if (is_attribute_exist(tableName, attributeName)) {
                 for (int i = 0; i < tmpTable.indexVector.size(); i++) {
-                    if (tmpTable.indexVector.get(i).attributeName.equals(attributeName))
-                        return tmpTable.indexVector.get(i).indexName;
+                    if (tmpTable.indexVector[i].attributeName.equals(attributeName))
+                        return tmpTable.indexVector[i].indexName;
                 }
             } else {
                 System.out.println("The attribute " + attributeName + " doesn't exist");
@@ -282,94 +278,94 @@ void CatalogManager::show_table() {
         return null;
     }
 
-    public static String get_attribute_name(String tableName, int i) {
-        return tables.get(tableName).attributeVector.get(i).attributeName;
+std::string get_attribute_name(std::string tableName, int i) {
+        return tables.get(tableName).attributeVector[i].attributeName;
     }
 
-    public static int get_attribute_index(String tableName, String attributeName) {
+int get_attribute_index(std::string tableName, std::string attributeName) {
         Table tmpTable = tables.get(tableName);
         Attribute tmpAttribute;
         for (int i = 0; i < tmpTable.attributeVector.size(); i++) {
-            tmpAttribute = tmpTable.attributeVector.get(i);
-            if (tmpAttribute.attributeName.equals(attributeName))
+            tmpAttribute = tmpTable.attributeVector[i];
+            if (tmpAttribute.attributeName==attributeName)
                 return i;
         }
-        System.out.println("The attribute " + attributeName + " doesn't exist");
+        cout << "The attribute doesn't exist" << endl;
         return -1;
     }
 
-    public static FieldType get_attribute_type(String tableName, String attributeName) {
+FieldType get_attribute_type(std::string tableName, std::string attributeName) {
         Table tmpTable = tables.get(tableName);
         Attribute tmpAttribute;
         for (int i = 0; i < tmpTable.attributeVector.size(); i++) {
-            tmpAttribute = tmpTable.attributeVector.get(i);
-            if (tmpAttribute.attributeName.equals(attributeName))
+            tmpAttribute = tmpTable.attributeVector[i];
+            if (tmpAttribute.attributeName==attributeName)
                 return tmpAttribute.type;
         }
-        System.out.println("The attribute " + attributeName + " doesn't exist");
-        return null;
+        cout << "The attribute doesn't exist" << endl;
+        return;
     }
 
-    public static int get_length(String tableName, String attributeName) {
+int get_length(std::string tableName, std::string attributeName) {
         Table tmpTable = tables.get(tableName);
         Attribute tmpAttribute;
         for (int i = 0; i < tmpTable.attributeVector.size(); i++) {
-            tmpAttribute = tmpTable.attributeVector.get(i);
-            if (tmpAttribute.attributeName.equals(attributeName))
+            tmpAttribute = tmpTable.attributeVector[i];
+            if (tmpAttribute.attributeName==attributeName)
                 return tmpAttribute.type.get_length();
         }
-        System.out.println("The attribute " + attributeName + " doesn't exist");
+        cout << "The attribute doesn't exist" << endl;
         return -1;
     }
 
-    public static String get_type(String tableName, int i) {
+std::string get_type(std::string tableName, int i) {
         //Table tmpTable=tables.get(tableName);
-        return tables.get(tableName).attributeVector.get(i).type.get_type().name();
+        return tables.get(tableName).attributeVector[i].type.get_type().name();
     }
 
-    public static int get_length(String tableName, int i) {
+int get_length(std::string tableName, int i) {
         //table tmpTable=tables.get(tableName);
-        return tables.get(tableName).attributeVector.get(i).type.get_length();
+        return tables.get(tableName).attributeVector[i].type.get_length();
     }
 
-    public static void add_row_num(String tableName) {
+void add_row_num(std::string tableName) {
         tables.get(tableName).rowNum++;
     }
 
-    public static void delete_row_num(String tableName, int num) {
+void delete_row_num(std::string tableName, int num) {
         tables.get(tableName).rowNum -= num;
     }
 
-    public static boolean update_index_table(String indexName, Index tmpIndex) {
+bool update_index_table(std::string indexName, Index tmpIndex) {
         indexes.replace(indexName, tmpIndex);
         return true;
     }
 
-    public static boolean is_attribute_exist(Vector<Attribute> attributeVector, String attributeName) {
+bool is_attribute_exist(std::vector<Attribute> attributeVector, std::string attributeName) {
         for (int i = 0; i < attributeVector.size(); i++) {
-            if (attributeVector.get(i).attributeName.equals(attributeName))
+            if (attributeVector[i].attributeName==attributeName)
                 return true;
         }
         return false;
     }
 
     //Interface
-    public static boolean create_table(Table newTable) throws NullPointerException{
+bool create_table(Table newTable){
         tables.put(newTable.tableName, newTable);
         //indexes.put(newTable.indexes.firstElement().indexName, newTable.indexes.firstElement());
         return true;
     }
 
-    public static boolean drop_table(String tableName) throws NullPointerException{
+bool drop_table(std::string tableName){
         Table tmpTable = tables.get(tableName);
         for (int i = 0; i < tmpTable.indexVector.size(); i++) {
-            indexes.remove(tmpTable.indexVector.get(i).indexName);
+            indexes.remove(tmpTable.indexVector[i].indexName);
         }
         tables.remove(tableName);
         return true;
     }
 
-    public static boolean create_index(Index newIndex) throws NullPointerException{
+bool create_index(Index newIndex){
         Table tmpTable = get_table(newIndex.tableName);
         tmpTable.indexVector.addElement(newIndex);
         tmpTable.indexNum = tmpTable.indexVector.size();
@@ -377,8 +373,8 @@ void CatalogManager::show_table() {
         return true;
     }
 
-    public static boolean drop_index(String indexName) throws NullPointerException{
-        Index tmpIndex = get_index(indexName);
+bool drop_index(std::string indexName){
+        IndexInfo tmpIndex = get_index(indexName);
         Table tmpTable = get_table(tmpIndex.tableName);
         tmpTable.indexVector.remove(tmpIndex);
         tmpTable.indexNum = tmpTable.indexVector.size();
